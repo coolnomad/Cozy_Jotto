@@ -1,0 +1,138 @@
+import { useState, useCallback, useEffect } from 'react';
+import { useStorage, STORAGE_KEYS } from './useStorage';
+import { getDailyWord, getRandomWord, getTodayDateString } from '../utils/dailyWord';
+import { countMatches, validateGuess, checkGameOver } from '../utils/gameLogic';
+
+const MAX_GUESSES = 10;
+
+function createInitialGameState(mode) {
+  const today = getTodayDateString();
+  return {
+    mode,
+    targetWord: mode === 'daily' ? getDailyWord() : getRandomWord(),
+    guesses: [],
+    isGameOver: false,
+    isWon: false,
+    dateString: today,
+    gameStartTime: Date.now(),
+  };
+}
+
+export function useGameState(mode, onGameComplete) {
+  const { getItem, setItem } = useStorage();
+
+  // Load or initialize game state
+  const [gameState, setGameState] = useState(() => {
+    const storageKey = mode === 'daily' ? STORAGE_KEYS.GAME_STATE_DAILY : STORAGE_KEYS.GAME_STATE_ZEN;
+    const saved = getItem(storageKey);
+    const today = getTodayDateString();
+
+    if (saved) {
+      // For daily mode, check if it's still the same day
+      if (mode === 'daily') {
+        if (saved.dateString === today) {
+          return saved;
+        }
+        // New day, start fresh
+        return createInitialGameState(mode);
+      }
+      // For zen mode, restore saved state
+      return saved;
+    }
+
+    return createInitialGameState(mode);
+  });
+
+  // Persist game state
+  useEffect(() => {
+    const storageKey = mode === 'daily' ? STORAGE_KEYS.GAME_STATE_DAILY : STORAGE_KEYS.GAME_STATE_ZEN;
+    setItem(storageKey, gameState);
+  }, [gameState, mode, setItem]);
+
+  // Check if daily already played today
+  const canPlay = useCallback(() => {
+    if (mode !== 'daily') return true;
+    const today = getTodayDateString();
+    return gameState.dateString === today && !gameState.isGameOver;
+  }, [mode, gameState]);
+
+  // Check if daily was completed today
+  const hasPlayedToday = useCallback(() => {
+    if (mode !== 'daily') return false;
+    const today = getTodayDateString();
+    return gameState.dateString === today && gameState.isGameOver;
+  }, [mode, gameState]);
+
+  // Make a guess
+  const makeGuess = useCallback((word) => {
+    const normalizedWord = word.toUpperCase().trim();
+
+    // Validate
+    const error = validateGuess(normalizedWord, gameState.guesses);
+    if (error) {
+      return { success: false, error };
+    }
+
+    // Calculate matches
+    const matches = countMatches(normalizedWord, gameState.targetWord);
+
+    // Create new guess
+    const newGuess = { word: normalizedWord, matches };
+    const newGuesses = [...gameState.guesses, newGuess];
+
+    // Check game over
+    const { isOver, isWon } = checkGameOver(newGuesses, gameState.targetWord, MAX_GUESSES);
+
+    // Update state
+    setGameState(prev => ({
+      ...prev,
+      guesses: newGuesses,
+      isGameOver: isOver,
+      isWon,
+    }));
+
+    // Notify completion
+    if (isOver && onGameComplete) {
+      onGameComplete(isWon, newGuesses.length);
+    }
+
+    return { success: true, matches, isGameOver: isOver, isWon };
+  }, [gameState, onGameComplete]);
+
+  // Reset game (for Zen mode or new daily)
+  const resetGame = useCallback(() => {
+    const newState = createInitialGameState(mode);
+    setGameState(newState);
+  }, [mode]);
+
+  // Switch mode (preserves state for each mode)
+  const switchMode = useCallback((newMode) => {
+    const storageKey = newMode === 'daily' ? STORAGE_KEYS.GAME_STATE_DAILY : STORAGE_KEYS.GAME_STATE_ZEN;
+    const saved = getItem(storageKey);
+    const today = getTodayDateString();
+
+    if (saved) {
+      if (newMode === 'daily') {
+        if (saved.dateString === today) {
+          setGameState(saved);
+          return;
+        }
+      } else {
+        setGameState(saved);
+        return;
+      }
+    }
+
+    setGameState(createInitialGameState(newMode));
+  }, [getItem]);
+
+  return {
+    gameState,
+    makeGuess,
+    resetGame,
+    switchMode,
+    canPlay,
+    hasPlayedToday,
+    maxGuesses: MAX_GUESSES,
+  };
+}
