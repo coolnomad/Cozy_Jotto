@@ -15,6 +15,7 @@ function createInitialGameState(mode) {
     isWon: false,
     dateString: today,
     gameStartTime: Date.now(),
+    scratchpad: {},
   };
 }
 
@@ -31,13 +32,13 @@ export function useGameState(mode, onGameComplete) {
       // For daily mode, check if it's still the same day
       if (mode === 'daily') {
         if (saved.dateString === today) {
-          return saved;
+          return { ...saved, scratchpad: saved.scratchpad || {} };
         }
         // New day, start fresh
         return createInitialGameState(mode);
       }
       // For zen mode, restore saved state
-      return saved;
+      return { ...saved, scratchpad: saved.scratchpad || {} };
     }
 
     return createInitialGameState(mode);
@@ -114,17 +115,28 @@ export function useGameState(mode, onGameComplete) {
     if (saved) {
       if (newMode === 'daily') {
         if (saved.dateString === today) {
-          setGameState(saved);
+          setGameState({ ...saved, scratchpad: saved.scratchpad || {} });
           return;
         }
       } else {
-        setGameState(saved);
+        setGameState({ ...saved, scratchpad: saved.scratchpad || {} });
         return;
       }
     }
 
     setGameState(createInitialGameState(newMode));
   }, [getItem]);
+
+  const cycleScratchpad = useCallback((letter) => {
+    setGameState(prev => {
+      const current = prev.scratchpad?.[letter] ?? 0;
+      const next = (current + 1) % 4;
+      return {
+        ...prev,
+        scratchpad: { ...prev.scratchpad, [letter]: next },
+      };
+    });
+  }, []);
 
   return {
     gameState,
@@ -134,5 +146,6 @@ export function useGameState(mode, onGameComplete) {
     canPlay,
     hasPlayedToday,
     maxGuesses: MAX_GUESSES,
+    cycleScratchpad,
   };
 }

@@ -109,12 +109,12 @@ export default function GameBoard({
                 Guess the 5-letter word in {maxGuesses} tries.
               </p>
               <p className="text-amber-700 text-sm text-center mt-1">
-                Each guess shows how many unique letters match the hidden word.
+                Each guess shows how many letters are in the hidden word.
               </p>
               <div className="mt-3 flex flex-col sm:flex-row justify-center gap-2 text-sm text-amber-700">
                 <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 border border-amber-100 shadow-inner">
                   <span className="text-lg">­🔤</span>
-                  <span>Unique letters only</span>
+                  <span>Duplicates count</span>
                 </span>
                 <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 border border-amber-100 shadow-inner">
                   <span className="text-lg">⏳</span>

@@ -5,6 +5,7 @@ import GameBoard from './components/GameBoard';
 import HowToPlayModal from './components/HowToPlayModal';
 import StatsModal from './components/StatsModal';
 import MusicToggle from './components/MusicToggle';
+import ScratchpadKeyboard from './components/ScratchpadKeyboard';
 import { useGameState } from './hooks/useGameState';
 import { useStats } from './hooks/useStats';
 
@@ -26,6 +27,7 @@ function AppContent() {
     switchMode,
     hasPlayedToday,
     maxGuesses,
+    cycleScratchpad,
   } = useGameState(mode, handleGameComplete);
 
   const handleModeChange = (newMode) => {
@@ -93,6 +95,11 @@ function AppContent() {
               hasPlayedToday={hasPlayedToday()}
             />
           </div>
+
+          <ScratchpadKeyboard
+            keyStates={gameState.scratchpad || {}}
+            onCycle={cycleScratchpad}
+          />
 
           {/* Coffee decoration */}
           <div className="text-center text-amber-300 select-none" aria-hidden="true">

@@ -70,7 +70,7 @@ export default function HowToPlayModal({ isOpen, onClose }) {
 
           <div className="space-y-6 text-gray-700">
             <p>
-              Guess the 5-letter word in 6 tries. Each guess shows how many unique letters match the hidden word.
+              Guess the 5-letter word in 10 tries. Each guess shows how many letters are in the hidden word.
             </p>
 
             <div className="bg-amber-50 rounded-xl p-4">
@@ -92,8 +92,8 @@ export default function HowToPlayModal({ isOpen, onClose }) {
               <h3 className="font-semibold text-amber-900">Matching Rules</h3>
               <ul className="list-disc list-inside space-y-2 text-sm">
                 <li>Letter position doesn't matter - just count matches</li>
-                <li>Duplicate letters only count once per unique letter</li>
-                <li>If the word is APPLE and you guess LLAMA, you get 2 matches (L and A)</li>
+                <li>Duplicate letters count if that letter appears in the hidden word</li>
+                <li>If the word is PALOR and you guess APPLE, you get 4 matches (A, P, P, L)</li>
               </ul>
             </div>
 

@@ -2,14 +2,14 @@ import { VALID_WORDS } from '../data/words';
 
 /**
  * Count matching letters between guess and target.
- * Counts unique shared letters only (duplicates count once).
+ * Counts each letter in the guess that appears in the target (duplicates count).
  */
 export function countMatches(guess, target) {
   const targetSet = new Set(target.toUpperCase());
-  const guessSet = new Set(guess.toUpperCase());
+  const guessChars = guess.toUpperCase().split('');
 
   let matches = 0;
-  guessSet.forEach((char) => {
+  guessChars.forEach((char) => {
     if (targetSet.has(char)) {
       matches += 1;
     }
