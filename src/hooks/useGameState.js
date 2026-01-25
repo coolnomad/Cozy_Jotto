@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useStorage, STORAGE_KEYS } from './useStorage';
 import { getDailyWord, getRandomWord, getTodayDateString } from '../utils/dailyWord';
+import { fetchRandomZenWord } from '../utils/zenWord';
 import { countMatches, validateGuess, checkGameOver } from '../utils/gameLogic';
 
 const MAX_GUESSES = 10;
@@ -9,18 +10,20 @@ function createInitialGameState(mode) {
   const today = getTodayDateString();
   return {
     mode,
-    targetWord: mode === 'daily' ? getDailyWord() : getRandomWord(),
+    targetWord: mode === 'daily' ? getDailyWord() : null,
     guesses: [],
     isGameOver: false,
     isWon: false,
     dateString: today,
     gameStartTime: Date.now(),
     scratchpad: {},
+    isFetchingWord: mode !== 'daily',
   };
 }
 
 export function useGameState(mode, onGameComplete) {
   const { getItem, setItem } = useStorage();
+  const [isValidating, setIsValidating] = useState(false);
 
   // Load or initialize game state
   const [gameState, setGameState] = useState(() => {
@@ -32,13 +35,17 @@ export function useGameState(mode, onGameComplete) {
       // For daily mode, check if it's still the same day
       if (mode === 'daily') {
         if (saved.dateString === today) {
-          return { ...saved, scratchpad: saved.scratchpad || {} };
+          return { ...saved, scratchpad: saved.scratchpad || {}, isFetchingWord: false };
         }
         // New day, start fresh
         return createInitialGameState(mode);
       }
       // For zen mode, restore saved state
-      return { ...saved, scratchpad: saved.scratchpad || {} };
+      return {
+        ...saved,
+        scratchpad: saved.scratchpad || {},
+        isFetchingWord: !saved.targetWord,
+      };
     }
 
     return createInitialGameState(mode);
@@ -64,12 +71,53 @@ export function useGameState(mode, onGameComplete) {
     return gameState.dateString === today && gameState.isGameOver;
   }, [mode, gameState]);
 
+  // Fetch a new Zen word if needed
+  useEffect(() => {
+    let isActive = true;
+
+    const ensureZenWord = async () => {
+      if (mode !== 'zen' || gameState.targetWord) return;
+      setGameState(prev => ({ ...prev, isFetchingWord: true }));
+
+      try {
+        const word = await fetchRandomZenWord();
+        if (!isActive) return;
+        setGameState(prev => ({
+          ...prev,
+          targetWord: word,
+          isFetchingWord: false,
+        }));
+      } catch (error) {
+        console.error('Failed to fetch Zen word, falling back to local list.', error);
+        if (!isActive) return;
+        setGameState(prev => ({
+          ...prev,
+          targetWord: getRandomWord(),
+          isFetchingWord: false,
+        }));
+      }
+    };
+
+    ensureZenWord();
+    return () => { isActive = false; };
+  }, [mode, gameState.targetWord]);
+
   // Make a guess
-  const makeGuess = useCallback((word) => {
+  const makeGuess = useCallback(async (word) => {
     const normalizedWord = word.toUpperCase().trim();
 
+    if (!gameState.targetWord) {
+      return { success: false, error: 'Fetching a word, please try again in a moment.' };
+    }
+
     // Validate
-    const error = validateGuess(normalizedWord, gameState.guesses);
+    setIsValidating(true);
+    let error = null;
+    try {
+      error = await validateGuess(normalizedWord, gameState.guesses);
+    } finally {
+      setIsValidating(false);
+    }
     if (error) {
       return { success: false, error };
     }
@@ -115,11 +163,15 @@ export function useGameState(mode, onGameComplete) {
     if (saved) {
       if (newMode === 'daily') {
         if (saved.dateString === today) {
-          setGameState({ ...saved, scratchpad: saved.scratchpad || {} });
+          setGameState({ ...saved, scratchpad: saved.scratchpad || {}, isFetchingWord: false });
           return;
         }
       } else {
-        setGameState({ ...saved, scratchpad: saved.scratchpad || {} });
+        setGameState({
+          ...saved,
+          scratchpad: saved.scratchpad || {},
+          isFetchingWord: !saved.targetWord,
+        });
         return;
       }
     }
@@ -147,5 +199,6 @@ export function useGameState(mode, onGameComplete) {
     hasPlayedToday,
     maxGuesses: MAX_GUESSES,
     cycleScratchpad,
+    isValidating,
   };
 }

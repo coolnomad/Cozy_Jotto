@@ -1,4 +1,5 @@
 import { VALID_WORDS } from '../data/words';
+import { isDictionaryWord } from './dictionary';
 
 /**
  * Count matching letters between guess and target.
@@ -22,7 +23,7 @@ export function countMatches(guess, target) {
  * Validate a guess and return error message if invalid
  * Returns null if valid
  */
-export function validateGuess(guess, previousGuesses = []) {
+export async function validateGuess(guess, previousGuesses = []) {
   if (!guess || guess.trim() === '') {
     return 'Please enter a word';
   }
@@ -38,7 +39,10 @@ export function validateGuess(guess, previousGuesses = []) {
   }
 
   if (!VALID_WORDS.has(word)) {
-    return "Hmm, that's not a word I recognize. Try another!";
+    const isValid = await isDictionaryWord(word);
+    if (!isValid) {
+      return "Hmm, that's not a word I recognize. Try another!";
+    }
   }
 
   if (previousGuesses.some(g => g.word.toUpperCase() === word)) {

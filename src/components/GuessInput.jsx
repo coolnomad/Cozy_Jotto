@@ -11,12 +11,14 @@ export default function GuessInput({ onGuess, disabled = false, error = null }) 
     }
   }, [disabled]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (disabled || !value.trim()) return;
 
-    onGuess(value);
-    setValue('');
+    const result = await onGuess(value);
+    if (result?.success) {
+      setValue('');
+    }
   };
 
   const handleChange = (e) => {

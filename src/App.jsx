@@ -28,6 +28,7 @@ function AppContent() {
     hasPlayedToday,
     maxGuesses,
     cycleScratchpad,
+    isValidating,
   } = useGameState(mode, handleGameComplete);
 
   const handleModeChange = (newMode) => {
@@ -93,6 +94,7 @@ function AppContent() {
               maxGuesses={maxGuesses}
               mode={mode}
               hasPlayedToday={hasPlayedToday()}
+              isValidating={isValidating}
             />
           </div>
 

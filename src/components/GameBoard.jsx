@@ -11,17 +11,19 @@ export default function GameBoard({
   maxGuesses,
   mode,
   hasPlayedToday,
+  isValidating,
 }) {
   const { addToast } = useToast();
   const [inputError, setInputError] = useState(null);
 
-  const { guesses, isGameOver, isWon, targetWord, dateString } = gameState;
+  const { guesses, isGameOver, isWon, targetWord, dateString, isFetchingWord } = gameState;
   const guessesUsed = guesses.length;
   const guessesRemaining = Math.max(maxGuesses - guessesUsed, 0);
+  const isInputDisabled = isGameOver || isValidating || isFetchingWord;
 
-  const handleGuess = (word) => {
+  const handleGuess = async (word) => {
     setInputError(null);
-    const result = onGuess(word);
+    const result = await onGuess(word);
 
     if (!result.success) {
       setInputError(result.error);
@@ -37,6 +39,8 @@ export default function GameBoard({
     } else if (result.isGameOver) {
       addToast(`The word was ${targetWord}. Better luck next time!`, 'info', 5000);
     }
+
+    return result;
   };
 
   // Show "already played today" message for daily mode
@@ -111,6 +115,11 @@ export default function GameBoard({
               <p className="text-amber-700 text-sm text-center mt-1">
                 Each guess shows how many letters are in the hidden word.
               </p>
+              {(isFetchingWord || isValidating) && (
+                <p className="text-amber-700 text-sm text-center mt-2">
+                  {isFetchingWord ? 'Fetching a fresh word...' : 'Checking your guess...'}
+                </p>
+              )}
               <div className="mt-3 flex flex-col sm:flex-row justify-center gap-2 text-sm text-amber-700">
                 <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 border border-amber-100 shadow-inner">
                   <span className="text-lg">­🔤</span>
@@ -125,7 +134,7 @@ export default function GameBoard({
           </div>
           <GuessInput
             onGuess={handleGuess}
-            disabled={isGameOver}
+            disabled={isInputDisabled}
             error={inputError}
           />
           <GuessList guesses={guesses} maxGuesses={maxGuesses} />
