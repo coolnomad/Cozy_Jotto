@@ -1,4 +1,4 @@
-import { DAILY_WORDS_UNIQUE } from '../data/words';
+import { DAILY_WORDS } from '../data/words';
 
 /**
  * Get today's date string in UTC (YYYY-MM-DD format)
@@ -27,16 +27,16 @@ function hashString(str) {
  */
 export function getDailyWord(dateString = getTodayDateString()) {
   const hash = hashString(dateString);
-  const index = hash % DAILY_WORDS_UNIQUE.length;
-  return DAILY_WORDS_UNIQUE[index];
+  const index = hash % DAILY_WORDS.length;
+  return DAILY_WORDS[index];
 }
 
 /**
  * Get a random word for Zen mode
  */
 export function getRandomWord() {
-  const index = Math.floor(Math.random() * DAILY_WORDS_UNIQUE.length);
-  return DAILY_WORDS_UNIQUE[index];
+  const index = Math.floor(Math.random() * DAILY_WORDS.length);
+  return DAILY_WORDS[index];
 }
 
 /**

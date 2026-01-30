@@ -37,11 +37,6 @@ export const DAILY_WORDS = [
   'ROWDY', 'SLICK', 'UNZIP'
 ];
 
-// Daily pool must be 5-letter words with no repeat letters.
-export const DAILY_WORDS_UNIQUE = DAILY_WORDS.filter((word) => (
-  word.length === 5 && new Set(word).size === 5
-));
-
 // Extended valid words set for validation (includes daily words + more)
 export const VALID_WORDS = new Set([
   ...DAILY_WORDS,
